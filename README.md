@@ -1,5 +1,14 @@
 # policy-as-versioned-nist
 
+**GitHub org:** [`policy-as-versioned-nist`](https://github.com/policy-as-versioned-nist) ·
+**Role:** regulator — publisher · **Licence:** [Apache-2.0](LICENSE)
+
+Part of the *Policy as Versioned Code* estate: a shared platform, two regulators, three regulated
+institutions, each its own independent GitHub organisation, exchanging signed, versioned
+dependencies. A regulator publishes controls or penalties as a signed, versioned artefact and bears
+no risk of its own here. Full thesis, design decisions (ADRs) and the other five parties:
+[policy-as-versioned-flux](https://github.com/policy-as-versioned-flux/policy-as-versioned-flux).
+
 **Regulator (real).** Publishes the genuine NIST 800-53 OSCAL controls catalog
 as a versioned, signed, machine-readable artifact that institutions pin as an
 upstream dependency. A regulatory change propagates down the graph as a
