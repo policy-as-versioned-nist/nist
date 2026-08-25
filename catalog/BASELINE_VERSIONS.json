@@ -1,0 +1,28 @@
+{
+  "publishedVersion": "1.1.0",
+  "comment": "This publishedVersion is the git tag institutions pin (v1.1.0), same tag as CATALOG_VERSION.json's. Baselines are OSCAL profiles selecting a named subset of catalog/NIST_SP-800-53_rev5.2.0_catalog.json. Every id below is verbatim from the catalogue: bare, lowercase, no prefix.",
+  "catalogFile": "NIST_SP-800-53_rev5.2.0_catalog.json",
+  "source": {
+    "upstream": "usnistgov/oscal-content",
+    "urlTemplate": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_{NAME}-baseline_profile.json",
+    "oscalVersion": "1.2.2",
+    "fetchedAt": "2026-08-25T00:00:00Z"
+  },
+  "baselines": {
+    "LOW": {
+      "file": "NIST_SP-800-53_rev5.2.0_LOW-baseline_profile.json",
+      "controlCount": 149,
+      "sha256": "69507803094fdc4c2d513e3d32f99554a545f1a5fd6c6c2a3826f89bb9ce62b1"
+    },
+    "MODERATE": {
+      "file": "NIST_SP-800-53_rev5.2.0_MODERATE-baseline_profile.json",
+      "controlCount": 287,
+      "sha256": "cefb43282c2c7c5272c2b7af5a68b7104a26eb07be143fdc934de7ec20a326c9"
+    },
+    "HIGH": {
+      "file": "NIST_SP-800-53_rev5.2.0_HIGH-baseline_profile.json",
+      "controlCount": 370,
+      "sha256": "65bd8e6cbf989a8ce4fcd48949541f4d0aa9087f10d13a6dff5a14d40a37aa7e"
+    }
+  }
+}

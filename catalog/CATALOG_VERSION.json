@@ -1,6 +1,6 @@
 {
-  "publishedVersion": "1.0.0",
-  "comment": "This publishedVersion is the git tag institutions pin (v1.0.0). It is a wrapper version around the upstream NIST release below, not a NIST version number of its own.",
+  "publishedVersion": "1.1.0",
+  "comment": "This publishedVersion is the git tag institutions pin (v1.1.0). It is a wrapper version around the upstream NIST release below, not a NIST version number of its own. Bumped from 1.0.0: adds the LOW/MODERATE/HIGH baseline profiles (see BASELINE_VERSIONS.json) beside this catalogue. The catalogue file itself is unchanged.",
   "file": "NIST_SP-800-53_rev5.2.0_catalog.json",
   "source": {
     "upstream": "usnistgov/oscal-content",
