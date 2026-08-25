@@ -1,0 +1,26 @@
+{
+  "profile": {
+    "uuid": "00000000-0000-4000-8000-000000000001",
+    "metadata": {
+      "title": "fixture: a profile carrying an id absent from the catalogue",
+      "last-modified": "2026-08-25T00:00:00Z",
+      "version": "0.0.0-fixture",
+      "oscal-version": "1.2.2",
+      "remarks": "scripts/verify_baselines.py must fail resolution on zz-999, which is not a real control id in any NIST 800-53 catalogue. Proves the acceptance criterion: an id absent from the catalogue fails the beat."
+    },
+    "imports": [
+      {
+        "href": "NIST_SP-800-53_rev5.2.0_catalog.json",
+        "include-controls": [
+          {
+            "with-ids": [
+              "ac-6",
+              "zz-999"
+            ]
+          }
+        ]
+      }
+    ],
+    "merge": {"as-is": true}
+  }
+}

@@ -7,6 +7,9 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 python3 "${HERE}/scripts/verify_catalog.py"
 
+echo "==> baselines: LOW/MODERATE/HIGH resolve against the catalogue, bare ids only"
+python3 "${HERE}/scripts/verify_baselines.py"
+
 echo "==> cs-14: EXPECTED_IDENTITY_REGEXP anchors org/repo/workflow, allows main + release/x.y.x"
 bash "${HERE}/scripts/verify-cert-identity-regexp.sh"
 
