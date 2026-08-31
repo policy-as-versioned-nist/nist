@@ -1,0 +1,7 @@
+# The declared bump for the next catalogue release (ticket 18, re-grill 13
+# and Q5 option (a): ico and nist have no versions.yaml array, so each gets
+# this one-key file beside its feed instead of an array-element field). The
+# release workflow reads this value; a human reviews it in the PR before
+# cut-release.yml tags. No catalogue change is pending, so the next release
+# is declared none until this file is edited alongside a real content change.
+bump: none

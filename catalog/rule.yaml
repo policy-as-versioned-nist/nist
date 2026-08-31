@@ -1,0 +1,8 @@
+# What "changed" means for the sp-800-53 catalogue (ADR-0023, D2), beside
+# bump.yaml at the published path. A control added is a minor; a control
+# removed or renamed is a major (a baseline or a regulator's weight keyed on
+# it stops resolving); prose edits to an existing control are a patch.
+feed: sp-800-53
+changed_when: "a control id added (minor), removed or renamed (major), or an existing control's text edited (patch)"
+entries: controls
+numeric_tolerance: 0

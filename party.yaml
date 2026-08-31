@@ -1,0 +1,23 @@
+# The party artefact (ticket 04/21, ADR-0019). nist publishes one controls
+# catalogue and pins nothing itself -- inherits stays empty. roles omits
+# adopter, so baseline is not required (ticket 04 Answer, party schema
+# roles: [publisher, risk-bearer, adopter, platform, insurer]).
+#
+# publishes[] is the discovery record ticket 04 Answer 4 describes: no
+# central catalogue, the set of publisher party.yaml files is the catalogue.
+# path is repo-relative to this file. payload_schema is omitted -- a
+# `controls` catalogue is OSCAL, not a feed payload, so there is no
+# payload_schema to point at (feed publishers set this key; controls/
+# implementations publishers don't).
+party: nist
+roles: [publisher]
+inherits: []
+publishes:
+  - kind: controls
+    name: sp-800-53
+    path: catalog
+    revoked: []
+# overlay is required by platform/party/schema.json for every party; a publisher that adopts nothing carries it empty.
+overlay:
+  add: []
+  restate: []
