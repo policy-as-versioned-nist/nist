@@ -41,6 +41,12 @@ permissions:
 # are the only paths any scheduled job in this repository may ever commit.
 env:
   OBSERVATION_LANE: "talk/truth.log drift/samples.jsonl talk/captures observations"
+  # Eco-system ticket 85, 2026-09-04, shared verbatim with the feeds and insurer clocks. The
+  # append step below switches to an orphan `observations` branch that carries no .gitignore, so
+  # anything ignored on `main` -- a `__pycache__` a reader wrote, most of all -- becomes an
+  # untracked file the cage refuses as a declaration outside the lane. Feeds lost five of six
+  # feeds' observations to exactly that, every run, silently.
+  PYTHONDONTWRITEBYTECODE: "1"
   GITSIGN_VERSION: 0.17.1
   GITSIGN_SHA256: 69213a8a0813a151e5a47d0060862952ff833a845d57309dff76f7ba6600abae
 
@@ -93,6 +99,51 @@ jobs:
               return sorted(found)[-1] if found else None
 
 
+          def catalogue(feed_dir):
+              """What a CONTROLS catalogue publishes, which is not an envelope feed.
+
+              Eco-system ticket 85, 2026-09-04. newest() above globs
+              <path>/v<N>/feed.json, which is the shape of a feed envelope. This
+              publisher ships an OSCAL catalogue: a flat catalog/ directory holding
+              the document itself beside CATALOG_VERSION.json, the wrapper that names
+              the version institutions actually pin (v1.1.0 today). The glob matched
+              nothing, every branch fell through to the else, and this clock has run
+              green every day since it was built while writing
+              published_version: null -- a clock that reports success and observes
+              nothing. party.yaml's own comment says why the two shapes differ: a
+              controls catalogue is OSCAL, not a feed payload, so it carries no
+              payload_schema.
+
+              Returns a dict of what was read, or None when there is no wrapper.
+              The hash is COMPUTED from the catalogue document, then compared with
+              the sha256 the wrapper declares: a hash that moves while the version
+              stands still is a tamper this clock can see, and a hash that disagrees
+              with the declared one is the same fact one step earlier.
+              """
+              wrapper = os.path.join(feed_dir, "CATALOG_VERSION.json")
+              if not os.path.exists(wrapper):
+                  return None
+              doc = json.load(open(wrapper))
+              read = {"published_version": doc.get("publishedVersion"),
+                      "published_at": (doc.get("source") or {}).get("fetchedAt"),
+                      "catalogue_kind": "oscal",
+                      "upstream_version": (doc.get("source") or {}).get("nistMetadataVersion"),
+                      "declared_sha256": doc.get("sha256")}
+              named = doc.get("file")
+              path = os.path.join(feed_dir, named) if named else None
+              if not path or not os.path.exists(path):
+                  read.update(payload_sha256=None,
+                              note=f"{wrapper} names no readable catalogue file, so this clock "
+                                   f"recorded the published version and could not hash the "
+                                   f"document it names")
+                  return read
+              with open(path, "rb") as fh:
+                  digest = hashlib.sha256(fh.read()).hexdigest()
+              read.update(payload_sha256=digest, catalogue_file=path,
+                          payload_matches_declared=(digest == doc.get("sha256")))
+              return read
+
+
           out = os.path.join(os.environ["RUNNER_TEMP"], "obs")
           now = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
           party = yaml.safe_load(open("party.yaml")) or {}
@@ -109,6 +160,7 @@ jobs:
                       "kind": entry.get("kind"), "declared_bump": declared_bump(feed_dir),
                       "revoked": entry.get("revoked") or []}
               found = newest(feed_dir)
+              read = catalogue(feed_dir)
               if found:
                   doc = json.load(open(found[1]))
                   body = json.dumps(doc.get("payload"), sort_keys=True,
@@ -116,10 +168,13 @@ jobs:
                   line.update(published_version=doc.get("version"),
                               published_at=doc.get("published_at"),
                               payload_sha256=hashlib.sha256(body).hexdigest())
+              elif read:
+                  line.update(read)
               else:
                   line.update(published_version=None, payload_sha256=None,
-                              note=f"no {feed_dir}/v<N>/feed.json in this repository yet -- "
-                                   f"this clock records that it looked and found none, which "
+                              note=f"neither {feed_dir}/v<N>/feed.json nor "
+                                   f"{feed_dir}/CATALOG_VERSION.json is in this repository yet "
+                                   f"-- this clock records that it looked and found none, which "
                                    f"is a fact with a date on it, not a silence")
               with open(os.path.join(out, f"{name}.jsonl"), "a") as fh:
                   fh.write(json.dumps(line, sort_keys=True) + "\n")
@@ -132,6 +187,12 @@ jobs:
           shopt -s nullglob
           files=("${RUNNER_TEMP}"/obs/*.jsonl)
           if [ ${#files[@]} -eq 0 ]; then echo "nothing observed"; exit 0; fi
+          # Before the branch switch, not after (ticket 85, 2026-09-04). This step had no clean
+          # at all, so anything an earlier step left in the tree came across to the orphan
+          # `observations` branch -- which has no .gitignore -- and the cage below refused it.
+          # The readings are already captured under ${RUNNER_TEMP}/obs, so nothing is lost.
+          git checkout -- . >/dev/null 2>&1 || true
+          git clean -ffdx -e .git >/dev/null 2>&1 || true
           if git ls-remote --exit-code --heads origin observations >/dev/null 2>&1; then
             git fetch origin observations:observations
             git checkout observations
