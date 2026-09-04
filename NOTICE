@@ -1,0 +1,33 @@
+policy-as-versioned-nist
+
+This repository redistributes, verbatim, the following works of the
+National Institute of Standards and Technology (NIST), an agency of the United States
+Department of Commerce:
+
+  Electronic (OSCAL) Version of NIST SP 800-53 Rev 5.2.0 Controls and SP 800-53A Rev 5.2.0 Assessment Procedures
+  (SP 800-53 revision 5.2.0, OSCAL 1.2.2)
+  and its LOW, MODERATE and HIGH baseline profiles.
+
+Works of the United States Government are not subject to copyright protection in the
+United States (17 U.S.C. section 105) and are in the public domain there. NIST asks that
+the source be credited; no endorsement by NIST is claimed or implied. The catalogue and
+the baselines are NOT licensed under this repository's Apache-2.0 LICENSE, which covers
+only the wrapper this party adds around them: party.yaml, the scripts, the version and
+provenance manifests, and the README.
+
+Source: usnistgov/oscal-content
+  https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog-min.json
+  https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_{NAME}-baseline_profile.json
+
+The exact bytes redistributed, as recorded in catalog/CATALOG_VERSION.json and
+catalog/BASELINE_VERSIONS.json (verify/disclaimer in the hub refuses a NOTICE that
+disagrees with either manifest):
+
+  d820835aa54aeb2265bdacdf8e678af7530443a59556563df898addf012024cb  catalogue sha256 (NIST_SP-800-53_rev5.2.0_catalog.json)
+  65bd8e6cbf989a8ce4fcd48949541f4d0aa9087f10d13a6dff5a14d40a37aa7e  HIGH baseline sha256 (NIST_SP-800-53_rev5.2.0_HIGH-baseline_profile.json)
+  69507803094fdc4c2d513e3d32f99554a545f1a5fd6c6c2a3826f89bb9ce62b1  LOW baseline sha256 (NIST_SP-800-53_rev5.2.0_LOW-baseline_profile.json)
+  cefb43282c2c7c5272c2b7af5a68b7104a26eb07be143fdc934de7ec20a326c9  MODERATE baseline sha256 (NIST_SP-800-53_rev5.2.0_MODERATE-baseline_profile.json)
+
+Fetched 2026-07-31T00:00:00Z (catalogue), 2026-08-25T00:00:00Z (baselines).
+
+A demonstration party, not affiliated with, endorsed by or speaking for any real authority it names.

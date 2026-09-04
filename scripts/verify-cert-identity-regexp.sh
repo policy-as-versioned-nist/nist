@@ -50,6 +50,10 @@ must_not_match "https://github.com/policy-as-versioned-nist/nist/.github/workflo
 must_not_match "https://github.com/policy-as-versioned-nist/nist/.github/workflows/cut-release.yml@refs/heads/maint/1.0"
 must_not_match "evil.com/https://github.com/policy-as-versioned-nist/nist/.github/workflows/cut-release.yml@refs/heads/main"
 must_not_match "https://github.com/policy-as-versioned-nist/nist/.github/workflows/cut-release.yml@refs/heads/main.evil.com"
+# a proposer identity (the adopters' propose-tier.yml signs cage-tier proposal
+# commits, ticket 78) is never a publisher's tag identity; this repo has no
+# proposer and its tags must not verify under one
+must_not_match "https://github.com/policy-as-versioned-nist/nist/.github/workflows/propose-tier.yml@refs/heads/main"
 
 if [ "${fail}" -ne 0 ]; then
   echo "FAIL: EXPECTED_IDENTITY_REGEXP did not behave as required" >&2
