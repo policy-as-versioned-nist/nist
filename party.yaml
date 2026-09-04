@@ -1,3 +1,4 @@
+# A demonstration party, not affiliated with, endorsed by or speaking for any real authority it names.
 # The party artefact (ticket 04/21, ADR-0019). nist publishes one controls
 # catalogue and pins nothing itself -- inherits stays empty. roles omits
 # adopter, so baseline is not required (ticket 04 Answer, party schema
