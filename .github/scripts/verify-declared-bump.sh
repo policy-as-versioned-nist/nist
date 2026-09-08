@@ -5,7 +5,18 @@
 #   1. the ladder itself, on fixtures (--selfcheck);
 #   2. the REAL declaration against the REAL tree (--tree) -- the same
 #      question .github/workflows/cut-release.yml asks before it tags.
-# Exit 0 observed true, 3 could-not-look, non-zero observed false.
+#
+# CORRECTED 2026-09-08 (eco-system ticket 103): --tree derives the next tag from
+# the declaration and refuses a tag that is not that bump of the newest release,
+# reads the predecessor -- file name and bytes -- AT ITS TAG, and tells "no tags
+# in this clone" apart from "never released" by asking origin: the one call that
+# is not offline, reached only when this checkout holds no release tag at all.
+# This clone holds them. The gate no longer exits 3 on an empty tag list (the
+# hub's talk/verify-manifest.txt declares no could-not-look for this row, so
+# that shrug graded FAIL anyway); the exit-3 branch below is kept for a future
+# --tree with a real reason not to look, and says so if it is ever taken.
+# Exit 0 observed true, 3 could-not-look (nothing takes it today), non-zero
+# observed false.
 set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$here"
