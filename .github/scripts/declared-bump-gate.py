@@ -23,10 +23,13 @@ previous tag and nothing else.
     declared-bump-gate.py --tree     # ...the same question, without naming a tag
     declared-bump-gate.py --selfcheck
 """
+import contextlib
+import io
 import json
 import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -145,6 +148,165 @@ def main(argv):
     return 0
 
 
+def grade(tag, declared):
+    """RED-RUN SHIM (ticket 103): the old gate has one entry point, main(argv). A planted case
+    writes the declaration it grades into the planted bump.yaml and calls it as the workflow
+    does. Replaced by a real grade() in the green commit."""
+    (CATALOG_DIR / "bump.yaml").write_text(f"bump: {declared}\n")
+    return main(["declared-bump-gate.py", tag])
+
+
+def tree(declared):
+    (CATALOG_DIR / "bump.yaml").write_text(f"bump: {declared}\n")
+    return main(["declared-bump-gate.py", "--tree"])
+
+
+class _Planted:
+    """A throwaway nist-shaped repository for --selfcheck: catalog/ with rule.yaml, bump.yaml,
+    CATALOG_VERSION.json and one OSCAL catalogue file, committed and tagged under a hook-free
+    git. The owner's global pre-commit hook is a rate-limited network call (estate note,
+    2026-09-06), so every git call here pins core.hooksPath to an empty directory and signs
+    nothing."""
+
+    def __init__(self, root, name):
+        self.repo = Path(root) / name
+        self.hooks = Path(root) / "no-hooks"
+        self.hooks.mkdir(exist_ok=True)
+        self.repo.mkdir()
+        self.git("init", "-q", "-b", "main")
+        (self.repo / "catalog").mkdir()
+        (self.repo / "catalog" / "rule.yaml").write_text(
+            'feed: sp-800-53\nchanged_when: "planted"\nentries: controls\n')
+
+    def git(self, *args):
+        return subprocess.run(["git", "-c", f"core.hooksPath={self.hooks}",
+                               "-c", "user.name=selfcheck", "-c", "user.email=selfcheck@invalid",
+                               "-c", "commit.gpgsign=false", "-c", "tag.gpgsign=false",
+                               "-C", str(self.repo), *args],
+                              capture_output=True, text=True, check=True).stdout
+
+    def catalog(self, ids, version="1.0.0", file="planted_catalog.json", title="t"):
+        body = {"catalog": {"groups": [{"id": "ac", "title": title, "controls": [
+            {"id": i, "title": i.upper(), "controls": []} for i in ids]}]}}
+        (self.repo / "catalog" / file).write_text(json.dumps(body, indent=1))
+        (self.repo / "catalog" / "CATALOG_VERSION.json").write_text(
+            json.dumps({"publishedVersion": version, "file": file}, indent=1))
+
+    def commit(self, message):
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", message)
+
+    def tag(self, name):
+        self.git("tag", name)
+
+    def clone(self, name, *flags):
+        dst = self.repo.parent / name
+        subprocess.run(["git", "clone", "-q", *flags, str(self.repo), str(dst)],
+                       capture_output=True, text=True, check=True)
+        return dst
+
+
+@contextlib.contextmanager
+def _at(repo):
+    """Point the gate at a planted repository for the duration of one case."""
+    global REPO, CATALOG_DIR
+    saved = REPO, CATALOG_DIR
+    REPO, CATALOG_DIR = Path(repo), Path(repo) / "catalog"
+    try:
+        yield
+    finally:
+        REPO, CATALOG_DIR = saved
+
+
+def _run(entry, *args):
+    """(exit code, everything printed) of one gate entry point."""
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+        code = entry(*args)
+    return code, out.getvalue().strip()
+
+
+def _expect(label, got, code, *phrases):
+    """One selfcheck verdict: the exit code and every phrase the output must carry."""
+    have, text = got
+    missing = [p for p in phrases if p not in text]
+    if have != code or missing:
+        raise AssertionError(f"{label}: expected exit {code} naming {list(phrases)}, got exit "
+                             f"{have} (missing {missing}): {text.splitlines()[-1] if text else '<nothing>'}")
+    print(f"ok  {label}")
+
+
+def _case_1_predecessor_at_the_tag(tmp):
+    """Ticket 103 (1), nist's shape: the predecessor was read at its tag already, but its file
+    NAME came from the working tree's CATALOG_VERSION.json, so a catalogue file renamed since the
+    tag could not be read at all. Both the name and the bytes now come from the tag."""
+    p = _Planted(tmp, "one")
+    p.catalog(["ac-1", "ac-2"], file="rev5_catalog.json")
+    p.commit("v1")
+    p.tag("v1.0.0")
+    (p.repo / "catalog" / "rev5_catalog.json").unlink()
+    p.catalog(["ac-1", "ac-2"], version="1.0.1", file="rev6_catalog.json")   # renamed, same content
+    p.commit("the catalogue file renamed, nothing else")
+    with _at(p.repo):
+        _expect("(1) the predecessor's file name is read at v1.0.0, not from the tree: a rename computes none",
+                _run(tree, "none"), 0, "v1.0.0 -> tree", "'none'")
+    (p.repo / "catalog" / "rev6_catalog.json").unlink()
+    p.catalog(["ac-1"], version="2.0.0", file="rev7_catalog.json")           # renamed, control removed
+    p.commit("renamed again, ac-2 removed")
+    with _at(p.repo):
+        _expect("(1) ...and a rename carrying a removed control computes major against the tag's bytes",
+                _run(grade, "v2.0.0", "major"), 0, "v1.0.0 -> v2.0.0", "'major'")
+
+
+def _case_2_the_tag_is_the_declared_bump(tmp):
+    """Ticket 103 (2): the tag must equal bump(previous released tag, declared)."""
+    p = _Planted(tmp, "two")
+    p.catalog(["ac-1", "ac-2"])
+    p.commit("v1")
+    p.tag("v1.0.0")
+    p.catalog(["ac-1", "ac-2", "ac-3"], version="1.1.0")                     # a control added
+    p.commit("a control added")
+    with _at(p.repo):
+        _expect("(2) v1.1.0 declared minor over v1.0.0 is admitted",
+                _run(grade, "v1.1.0", "minor"), 0, "v1.0.0 -> v1.1.0")
+        _expect("(2) v1.0.1 declared minor is refused: the tag is a patch increment",
+                _run(grade, "v1.0.1", "minor"), 1, "v1.0.1", "'patch'", "'minor'")
+        _expect("(2) v2.0.0 declared minor is refused: the tag is a major increment",
+                _run(grade, "v2.0.0", "minor"), 1, "v2.0.0", "'major'", "'minor'")
+        _expect("(2) --tree derives v1.1.0 from the declared minor and admits it",
+                _run(tree, "minor"), 0, "v1.0.0 -> v1.1.0")
+        _expect("(2) --tree refuses a declared none while the tree carries a minor",
+                _run(tree, "none"), 1, "'none'", "'minor'")
+    p.catalog(["ac-1", "ac-2"])                                              # nothing queued
+    p.commit("unchanged again")
+    with _at(p.repo):
+        _expect("(2) v1.0.1 declared none is refused: no tag carries none",
+                _run(grade, "v1.0.1", "none"), 1, "'none'", "no release is queued")
+        _expect("(2) --tree under a declared none admits an unchanged tree: no release is queued",
+                _run(tree, "none"), 0, "v1.0.0 -> tree", "no release is queued")
+
+
+def _case_3_no_tags_in_this_clone(tmp):
+    """Ticket 103 (3): an empty tag list is told apart from a repository that never released."""
+    p = _Planted(tmp, "three")
+    p.catalog(["ac-1", "ac-2"])
+    p.commit("v1")
+    p.tag("v1.0.0")
+    with _at(p.clone("three-no-tags", "--no-tags")):
+        _expect("(3) a --no-tags clone of a released repository is refused, not graded as a first release",
+                _run(grade, "v1.0.1", "patch"), 1, "no tags in this clone")
+        _expect("(3) ...and --tree refuses the same way, not exit 3",
+                _run(tree, "none"), 1, "no tags in this clone")
+    q = _Planted(tmp, "four")
+    q.catalog(["ac-1", "ac-2"])
+    q.commit("v1, never released")
+    with _at(q.clone("four-clone")):
+        _expect("(3) a clone of a repository that never released takes the first-release path",
+                _run(grade, "v1.0.0", "major"), 0, "first")
+        _expect("(3) ...and --tree names the tree's own publishedVersion as that first release",
+                _run(tree, "major"), 0, "v1.0.0", "first")
+
+
 def selfcheck():
     def catalog(ids, title="t"):
         return {"catalog": {"groups": [{"id": "ac", "title": title, "controls": [
@@ -169,6 +331,22 @@ def selfcheck():
     assert read_flat(CATALOG_DIR / "bump.yaml", "bump") in LADDER, "the real bump.yaml must parse"
     assert read_flat(CATALOG_DIR / "rule.yaml", "entries") == "controls", "the real rule.yaml must parse"
     print("ok  the real catalog/bump.yaml and rule.yaml parse with the standard library")
+
+    # ticket 103: three ways the gate could agree about a number a release would not carry. Each
+    # case plants a repository and runs the real entry points; every case is reported, not the
+    # first to fail, so a red run names everything that is red.
+    failed = []
+    with tempfile.TemporaryDirectory() as tmp:
+        for case in (_case_1_predecessor_at_the_tag, _case_2_the_tag_is_the_declared_bump,
+                     _case_3_no_tags_in_this_clone):
+            try:
+                case(tmp)
+            except AssertionError as exc:
+                failed.append(str(exc))
+                print(f"FAIL {exc}")
+    if failed:
+        print(f"FAIL: {len(failed)} ticket-103 selfcheck case(s) red", file=sys.stderr)
+        return 1
     return 0
 
 
