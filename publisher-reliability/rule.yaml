@@ -1,0 +1,4 @@
+feed: publisher-reliability
+changed_when: "payload schema bytes or path changed (major); target/pair inputs or score/unscoreable population/results changed (minor); tool/provenance/cutoff/report metadata changed (patch); identical except envelope version (none)"
+entries: authenticated-binary-forecast-pairs
+numeric_tolerance: 0

@@ -21,6 +21,7 @@ on:
   push:
     tags:
       - "v*.*.*"
+      - "publisher-reliability/v*.*.*"
   workflow_dispatch:
     inputs:
       tag:
@@ -46,6 +47,19 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: select publication family and verification identity
+        run: |
+          set -euo pipefail
+          case "$TAG" in
+            publisher-reliability/v*)
+              [[ "$TAG" =~ ^publisher-reliability/v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || { echo 'FAIL: malformed report version'; exit 1; }
+              echo 'PUBLICATION_KIND=report' >> "$GITHUB_ENV"
+              echo 'EXPECTED_IDENTITY_REGEXP=^https://github\.com/policy-as-versioned-nist/nist/\.github/workflows/cut-release\.yml@refs/heads/main$' >> "$GITHUB_ENV"
+              ;;
+            v[0-9]*.[0-9]*.[0-9]*) echo 'PUBLICATION_KIND=catalogue' >> "$GITHUB_ENV" ;;
+            *) echo 'FAIL: unknown publication family'; exit 1 ;;
+          esac
+
       - name: install pinned gitsign (binary + checksum, no marketplace action)
         run: |
           set -euo pipefail
@@ -54,6 +68,7 @@ jobs:
           chmod +x gitsign && sudo mv gitsign /usr/local/bin/gitsign
 
       - name: catalog offline verify (release gate)
+        if: env.PUBLICATION_KIND == 'catalogue'
         run: ./scripts/verify-catalog.sh
 
       - name: gitsign verify-tag, identity-pinned, offline Rekor bundle
@@ -64,26 +79,48 @@ jobs:
           # actions/checkout's second fetch flattens the annotated tag object
           # gitsign needs -- re-fetch the real tag ref before verifying it.
           git fetch origin "+refs/tags/${TAG}:refs/tags/${TAG}" --force
+          object=$(git rev-parse "refs/tags/${TAG}")
+          [ "$(git cat-file -t "$object")" = tag ] || { echo 'FAIL: release needs an annotated tag'; exit 1; }
+          if [ "$PUBLICATION_KIND" = report ]; then
+            [ "$(git cat-file tag "$object" | sed -n '/^$/q; s/^tag //p')" = "$TAG" ] || { echo 'FAIL: signed report tag name differs'; exit 1; }
+            commit=$(git rev-parse "$object^{commit}")
+            git rev-list --first-parent refs/remotes/origin/main | grep -Fx "$commit" >/dev/null || { echo 'FAIL: report source is outside served main'; exit 1; }
+          fi
           gitsign verify-tag "${TAG}" \
             --certificate-identity-regexp="${EXPECTED_IDENTITY_REGEXP}" \
             --certificate-oidc-issuer="${EXPECTED_ISSUER}"
+          [ "$(git rev-parse "refs/tags/${TAG}")" = "$object" ] || { echo 'FAIL: tag moved during verification'; exit 1; }
+          echo "VERIFIED_TAG_OBJECT=$object" >> "$GITHUB_ENV"
 
       - name: tag still resolves to the commit this run was triggered from
         # Only meaningful on the push-triggered path -- see the on: comment.
         if: github.event_name == 'push'
         run: |
           set -euo pipefail
-          resolved=$(git rev-parse "${TAG}^{commit}")
+          resolved=$(git rev-parse "${VERIFIED_TAG_OBJECT}^{commit}")
           if [ "${resolved}" != "${GITHUB_SHA}" ]; then
             echo "FAIL: tag ${TAG} resolves to ${resolved}, run was triggered from ${GITHUB_SHA}"
             exit 1
           fi
           echo "OK: ${TAG} -> ${resolved}"
 
+      - name: verify report from the exact authenticated source
+        if: env.PUBLICATION_KIND == 'report'
+        run: |
+          set -euo pipefail
+          git checkout --detach "${VERIFIED_TAG_OBJECT}^{commit}"
+          python3 -m pip install -r publisher-reliability/requirements.txt
+          version=$(python3 -c 'import json; print(json.load(open("publisher-reliability/version.json"))["version"])')
+          [ "$TAG" = "publisher-reliability/v${version}" ] || { echo 'FAIL: report version differs from its signed tag'; exit 1; }
+          python3 publisher-reliability/report.py check --root . \
+            --report "publisher-reliability/v${version%%.*}/feed.json" >/dev/null
+          echo 'PASS: authenticated report recomputes; this does not establish publisher-price accuracy'
+
       - name: publish GitHub Release recording the resolved SHA
         run: |
           set -euo pipefail
-          resolved=$(git rev-parse "${TAG}^{commit}")
+          [ "$(git rev-parse "refs/tags/${TAG}")" = "$VERIFIED_TAG_OBJECT" ] || { echo 'FAIL: verified tag moved before publication'; exit 1; }
+          resolved=$(git rev-parse "${VERIFIED_TAG_OBJECT}^{commit}")
           {
             git tag -l --format='%(contents)' "${TAG}" | sed '/^-----BEGIN SIGNED MESSAGE-----$/,$d'
             echo "---"

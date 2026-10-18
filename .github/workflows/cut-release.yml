@@ -22,7 +22,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "semver tag to cut, e.g. v1.0.0"
+        description: "catalogue vX.Y.Z or publisher-reliability/vX.Y.Z tag to cut"
         required: true
       message:
         description: "annotated tag message -- what changed and why"
@@ -44,6 +44,21 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: select the bounded publication family
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          case "$VERSION_INPUT" in
+            publisher-reliability/v*)
+              [[ "$VERSION_INPUT" =~ ^publisher-reliability/v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || { echo 'FAIL: malformed report version'; exit 1; }
+              [ "$GITHUB_REF" = refs/heads/main ] || { echo 'FAIL: report cuts require main'; exit 1; }
+              echo 'PUBLICATION_KIND=report' >> "$GITHUB_ENV"
+              ;;
+            v[0-9]*.[0-9]*.[0-9]*) echo 'PUBLICATION_KIND=catalogue' >> "$GITHUB_ENV" ;;
+            *) echo 'FAIL: unknown publication family'; exit 1 ;;
+          esac
+
       - name: install pinned gitsign (binary + checksum, no marketplace action)
         run: |
           set -euo pipefail
@@ -57,25 +72,46 @@ jobs:
       # the script through `env:`, never interpolated into the command line
       # (the same rule cut-release-normalize.py states in platform).
       - name: "the declared bump must agree with the computed bump (ticket 43, 18 Answer 5)"
+        if: env.PUBLICATION_KIND == 'catalogue'
         env:
           VERSION_INPUT: ${{ inputs.version }}
         run: python3 .github/scripts/declared-bump-gate.py "${VERSION_INPUT}"
 
-      - name: reject a tag that already exists (no force-move, ever)
+      - name: report declared bump and exact version
+        if: env.PUBLICATION_KIND == 'report'
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: python3 .github/scripts/report-bump-gate.py "${VERSION_INPUT}"
+
+      - name: validate the committed report without claiming a measured population
+        if: env.PUBLICATION_KIND == 'report'
         run: |
           set -euo pipefail
-          if git rev-parse "refs/tags/${{ inputs.version }}" >/dev/null 2>&1; then
-            echo "FAIL: ${{ inputs.version }} already exists -- tags are immutable here, cut a new version" >&2
+          python3 -m pip install -r publisher-reliability/requirements.txt
+          bash scripts/verify-publisher-reliability.sh
+
+      - name: reject a tag that already exists (no force-move, ever)
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if git rev-parse "refs/tags/${VERSION_INPUT}" >/dev/null 2>&1; then
+            echo "FAIL: ${VERSION_INPUT} already exists -- tags are immutable here, cut a new version" >&2
             exit 1
           fi
 
       - name: create the signed annotated tag (ambient Actions identity, no interactive login)
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+          MESSAGE_INPUT: ${{ inputs.message }}
         run: |
           set -euo pipefail
-          git -c gpg.format=x509 -c gpg.x509.program=gitsign \
+          git -c gpg.format=x509 -c gpg.x509.program=gitsign -c gitsign.rekorMode=offline \
             -c user.name="policy-as-versioned release bot" \
             -c user.email="releases@${GITHUB_REPOSITORY_OWNER}.invalid" \
-            tag -s "${{ inputs.version }}" -m "${{ inputs.message }}"
+            tag -s "${VERSION_INPUT}" -m "${MESSAGE_INPUT}"
 
       - name: push the tag (git push only -- never the git-data REST API)
-        run: git push origin "${{ inputs.version }}"
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: git push origin "refs/tags/${VERSION_INPUT}"
