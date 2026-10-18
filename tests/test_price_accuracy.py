@@ -153,6 +153,50 @@ class PriceReport(unittest.TestCase):
                 self.assertEqual(cohort['counts'],{'registered_cases':1,'eligible':1,'unscoreable':0})
                 self.assertEqual(check_price_report(ROOT,report,sources),report)
 
+    def test_resolver_sdk_refuses_a_forecast_copy_signed_by_another_party(self):
+        from price_records import build_resolution,check_record,PriceError
+        with tempfile.TemporaryDirectory() as temp,patch.dict(os.environ,verifier_fixture(temp)):
+            forecast,resolution,manifest,sources=annual_fixture(temp)
+            copied=publish(sources/'driftwood',{'copied-forecast.json':forecast},
+                'copied-forecast/v1.0.0','2019-12-04T00:00:00Z')('copied-forecast.json')
+            request={key:resolution[key] for key in
+                ('profile','source','resolved_at','published_at','evidence_uri')}
+            wrong_resolution={**resolution,'forecast':copied}
+            operations=(
+                ('build_resolution',lambda:build_resolution(ROOT,forecast=copied,**request,source_roots=sources)),
+                ('check_record_resolution',lambda:check_record(ROOT,'resolution',wrong_resolution,sources)))
+            for name,operation in operations:
+                with self.subTest(public_sdk=name):
+                    with self.assertRaises(PriceError) as refused:
+                        operation()
+                    self.assertEqual(refused.exception.code,'resolution-binding')
+                    self.assertIn('target publisher',str(refused.exception))
+
+    def test_resolver_sdk_preserves_forecast_and_outcome_source_registration(self):
+        from price_records import build_resolution,check_record,PriceError
+        for kind in ('forecast','source'):
+            with self.subTest(registered_input=kind),tempfile.TemporaryDirectory() as temp,patch.dict(os.environ,verifier_fixture(temp)):
+                forecast,resolution,manifest,sources=annual_fixture(temp)
+                original=(manifest['cohorts'][0]['cases'][0]['forecast'] if kind=='forecast' else resolution['source'])
+                repo=sources/original['party']
+                document=json.loads((repo/original['path']).read_text())
+                fixture_git(repo,'rm',original['path'],at='2021-01-04T00:00:00Z')
+                fixture_git(repo,'commit','-qm','explicit synthetic registered-path deletion',at='2021-01-04T00:00:00Z')
+                readded=publish(repo,{original['path']:document},kind+'/v1.0.1',
+                    '2021-01-05T00:00:00Z')(original['path'])
+                self.assertEqual(readded['git_blob'],original['git_blob'])
+                wrong={**resolution,kind:readded}
+                request={key:wrong[key] for key in
+                    ('forecast','profile','source','resolved_at','published_at','evidence_uri')}
+                operations=(
+                    ('build_resolution',lambda:build_resolution(ROOT,**request,source_roots=sources)),
+                    ('check_record_resolution',lambda:check_record(ROOT,'resolution',wrong,sources)))
+                for name,operation in operations:
+                    with self.subTest(public_sdk=name):
+                        with self.assertRaises(PriceError) as refused:
+                            operation()
+                        self.assertEqual(refused.exception.code,'registration-history')
+
     def test_empty_report_refuses_a_rehashed_substitution_for_the_fixed_released_engine(self):
         from price_accuracy import build_price_report
         from price_records import PriceError
@@ -174,7 +218,9 @@ class PriceReport(unittest.TestCase):
         cli = ROOT / 'publisher-reliability/price_report.py'
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / 'report.json'
-            built = subprocess.run([sys.executable,str(cli),'build','--root',str(ROOT),
+            inputs=Path(temp)/'explicit-empty-fixture.json'
+            inputs.write_text(json.dumps({'schema':'publisher-reliability/price-input-set-v1','cohorts':[]}))
+            built = subprocess.run([sys.executable,str(cli),'build','--root',str(ROOT),'--inputs',str(inputs),
                 '--as-of','2026-10-18T17:00:00Z','--output',str(path)],capture_output=True,text=True)
             self.assertEqual(built.returncode,0,built.stderr)
             envelope = json.loads(built.stdout)

@@ -602,11 +602,14 @@ class _Session:
         return result
 
     def resolution(self, forecast_ref, profile_ref, source_ref, resolved_at, published_at, evidence_uri, forecast):
+        if forecast_ref['party'] != forecast['target']['party']:
+            raise PriceError('resolution-binding', 'forecast signer differs from its exact target publisher')
         if forecast['profile'] != profile_ref:
             raise PriceError('resolution-binding', 'resolution profile differs from the exact registered forecast')
         profile, target, inventory = self.profile(profile_ref, forecast['target'])
         rule = profile['document']['resolver_rule']
         source = self.sources.read(source_ref)
+        _arrival(source)
         document = source['document']
         if source_ref['party'] != rule['party'] or source_ref['party'] == forecast_ref['party']:
             raise PriceError('resolution-binding', 'resolution requires the declared different independent publisher')
@@ -659,6 +662,7 @@ def build_resolution(root, *, forecast, profile, source, resolved_at, published_
     item = session.sources.read(forecast)
     doc = item['document']
     _schema(root, 'forecast', doc)
+    _arrival(item)
     prepared = session.prepare(doc['profile'], doc['target'], doc['case_id'], doc['emitted_at'], doc['generator'])
     session.reserve([prepared])
     reproduced = session.generate(prepared)

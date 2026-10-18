@@ -90,3 +90,27 @@ are major, cohort/results changes minor, and cutoff/tool-only changes patch.
 The controls catalogue, its release route, binary source and historical report
 remain separate. Actual enrollment and priced activation require genuine signed
 profile/target/forecast/resolution/bar inputs and ordinary release/adoption.
+
+## Supplying nonempty source collections
+
+The native wrapper is offline. Pass `--sources /path/to/full/party-clones`, set
+`PUBLISHER_PRICE_SOURCE_ROOTS`, or use an existing flat sibling estate directory.
+`--report` selects another envelope; `--check-only` performs the same complete
+authenticated reconstruction without additionally running the source fixture
+suites. It never skips signature, immutable-history or generation checks.
+Missing source instruments remain exit 3; no network fallback is attempted.
+
+Ordinary v2 cut/release workflows call `price_sources.py` before checking a
+nonempty report. This bounded acquisition helper clones the eight canonical
+public origins in the pinned trust registry into a new private source root,
+with full independent history and no depth, filter, alternate object store or
+credential-helper requirement. An empty collection performs no cloning and
+introduces no fictional source refs. Acquisition does not admit a report: the
+SDK subsequently verifies the exact tags, identities, trees, blobs, immutable
+registration and model coupling. Existing source directories are never refreshed
+or overwritten by the helper.
+
+Resolver construction and record checking both require the forecast's signed
+publisher to be its target publisher. They retain the same immutable served
+registration checks for forecast and independent outcome source that the full
+report already required; copied, rewritten, deleted or re-added records refuse.

@@ -23,7 +23,7 @@ def _tool(root):
     _verify_engine(root)
     if (base / 'price_accuracy.py').read_bytes() != Path(__file__).read_bytes():
         raise PriceError('source-binding', 'executing price checker differs from selected source')
-    names = ['price_accuracy.py', 'price_records.py', 'price_report.py', 'price_generator.py',
+    names = ['price_accuracy.py', 'price_records.py', 'price_report.py', 'price_generator.py', 'price_sources.py',
              'price-schemas.json', 'price-payload.schema.json', 'PRICE-UPSTREAM.json', 'price-trust.json',
              'price-version.json', 'requirements.txt', 'report.py', 'scoring.py', 'envelope.schema.json']
     for name in names:
