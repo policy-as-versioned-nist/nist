@@ -443,6 +443,32 @@ class ReportCLI(unittest.TestCase):
             self.assertTrue(call.stderr.rstrip().splitlines()[-1].startswith('FAIL:'), call.stderr)
             self.assertIn('discovery', call.stderr)
 
+    def test_unresolvable_local_target_schema_has_a_named_refusal(self):
+        schemas = (
+            ({'$ref': '#/definitions/value', 'definitions': {'value': {'type': 'object'}}}, 0),
+            ({'$ref': '#/definitions/missing'}, 1),
+            ({'$ref': '#missing'}, 1),
+        )
+        for schema, expected in schemas:
+            with self.subTest(schema=schema), tempfile.TemporaryDirectory() as temp:
+                feeds, target = source_fixture(temp)
+                (feeds / 'fixture/payload.schema.json').write_text(json.dumps(schema))
+                document = json.loads((feeds / target['path']).read_text())
+                document['version'] = '1.0.1'
+                (feeds / target['path']).write_text(json.dumps(document))
+                fixture_git(feeds, 'add', 'fixture/payload.schema.json', target['path'])
+                fixture_git(feeds, 'commit', '-qm', 'explicit local schema reference fixture')
+                fixture_git(feeds, 'tag', '-a', 'fixture-binary-source/v1.0.1', '-m', 'unsigned fixture')
+                target.update(tag='fixture-binary-source/v1.0.1', commit=fixture_git(feeds, 'rev-parse', 'HEAD'))
+                fixture_git(feeds, 'update-ref', 'refs/remotes/origin/main', target['commit'])
+                call = self.invoke_fixture(temp, {'schema': 'publisher-reliability/inputs-v1', 'targets': [target], 'pairs': []})
+                self.assertEqual(call.returncode, expected, call.stderr)
+                if expected:
+                    self.assertEqual(call.stdout, '')
+                    self.assertTrue(call.stderr.rstrip().splitlines()[-1].startswith('FAIL:'), call.stderr)
+                    self.assertIn('target payload: invalid payload schema', call.stderr)
+                    self.assertNotIn('Traceback', call.stderr)
+
     def test_same_question_id_cannot_be_rescored_with_substitute_text(self):
         with tempfile.TemporaryDirectory() as temp:
             feeds, resolver, manifest = binary_pair_fixture(temp)

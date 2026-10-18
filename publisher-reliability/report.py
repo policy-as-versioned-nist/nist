@@ -118,7 +118,7 @@ def schema_document(doc, schema, label):
     try:
         jsonschema.Draft7Validator.check_schema(schema)
         errors = sorted(jsonschema.Draft7Validator(schema).iter_errors(doc), key=lambda e: str(e.path))
-    except jsonschema.SchemaError as error:
+    except (jsonschema.SchemaError, Unresolvable) as error:
         raise Rejected(f'{label}: invalid payload schema') from error
     if errors:
         raise Rejected(f'{label}: {errors[0].message}')
@@ -408,10 +408,11 @@ def main():
     command.add_argument('--sources', type=Path)
     args = parser.parse_args()
     try:
-        global yaml, jsonschema, scoring
+        global yaml, jsonschema, scoring, Unresolvable
         try:
             import yaml
             import jsonschema
+            from referencing.exceptions import Unresolvable
             import scoring
         except ModuleNotFoundError as error:
             raise MissingInstrument(f'Python module {error.name} is required for publisher reliability reports') from error
