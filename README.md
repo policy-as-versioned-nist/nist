@@ -64,3 +64,9 @@ manifest is empty: the source report is explicitly unmeasured, with null losses
 and all reliability bins. Binary Brier/log-loss fixtures establish machinery, not
 publisher-price accuracy or a monetary effect. The report has a separate
 namespaced signed-release route; the controls catalogue and its tags are unchanged.
+
+The separate [monetary SDK and report](publisher-reliability/PRICE-README.md)
+support annual empirical-CDF price accuracy through authenticated producer and
+independent resolver records. Its actual input collection currently declares no
+monetary cohorts; source capability and synthetic controls are not measured
+publisher accuracy or price activation.

@@ -110,11 +110,16 @@ jobs:
           set -euo pipefail
           git checkout --detach "${VERIFIED_TAG_OBJECT}^{commit}"
           python3 -m pip install -r publisher-reliability/requirements.txt
-          version=$(python3 -c 'import json; print(json.load(open("publisher-reliability/version.json"))["version"])')
+          case "$TAG" in
+            publisher-reliability/v1.*) version_file=version.json; checker=report.py ;;
+            publisher-reliability/v2.*) version_file=price-version.json; checker=price_report.py ;;
+            *) echo 'FAIL: unsupported report major'; exit 1 ;;
+          esac
+          version=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "publisher-reliability/$version_file")
           [ "$TAG" = "publisher-reliability/v${version}" ] || { echo 'FAIL: report version differs from its signed tag'; exit 1; }
-          python3 publisher-reliability/report.py check --root . \
+          python3 "publisher-reliability/$checker" check --root . \
             --report "publisher-reliability/v${version%%.*}/feed.json" >/dev/null
-          echo 'PASS: authenticated report recomputes; this does not establish publisher-price accuracy'
+          echo 'PASS: authenticated report recomputes; the declared population and criterion delimit any measurement'
 
       - name: publish GitHub Release recording the resolved SHA
         run: |

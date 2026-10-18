@@ -76,6 +76,25 @@ class ReportRelease(unittest.TestCase):
         wrong = self.invoke('publisher-reliability/v2.0.0')
         self.assertEqual(wrong.returncode, 1, wrong.stdout)
 
+    def test_monetary_schema_is_major_and_within_family_cutoff_is_patch(self):
+        self.previous()
+        monetary=json.loads((ROOT/'publisher-reliability/v2/feed.json').read_text())
+        self.change('publisher-reliability/v2/feed.json',monetary)
+        call=self.invoke('publisher-reliability/v2.0.0')
+        self.assertEqual(call.returncode,0,call.stdout+call.stderr)
+        git(self.repo,'add','.')
+        git(self.repo,'commit','-qm','synthetic monetary major predecessor')
+        git(self.repo,'tag','-a','publisher-reliability/v2.0.0','-m','unsigned fixture')
+        git(self.repo,'push','-q','origin','refs/tags/publisher-reliability/v2.0.0')
+        monetary['version']='2.0.1'
+        monetary['published_at']=monetary['payload']['cutoff']='2026-10-19T00:00:00Z'
+        self.change('publisher-reliability/v2/feed.json',monetary)
+        self.change('publisher-reliability/price-version.json',{'version':'2.0.1','tool_version':'2.0.0'})
+        (self.repo/'publisher-reliability/bump.yaml').write_text('bump: patch\n')
+        call=self.invoke('publisher-reliability/v2.0.1')
+        self.assertEqual(call.returncode,0,call.stdout+call.stderr)
+        self.assertIn('computed patch',call.stdout)
+
     def test_declared_patch_matches_exact_next_report_increment(self):
         self.previous()
         self.next_version('1.0.1', 'patch')

@@ -102,3 +102,7 @@ release workflow verifies the expected signer/issuer and exact source, then runs
 the native checker from that authenticated source before publication. Dispatch
 inputs enter shell through structured environment variables. No actual release,
 tag, public write or genuine scoring population is supplied by this source change.
+
+The separate [monetary v2 SDK and report set](PRICE-README.md) implement annual
+empirical-CDF price accuracy. The v1 binary source and artifact above remain
+unchanged. The real monetary manifest currently declares no cohorts.
