@@ -1,0 +1,714 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "scorer",
+    "as_of",
+    "status",
+    "claim_scope",
+    "tool",
+    "inputs",
+    "counts",
+    "scores",
+    "losses",
+    "diagram",
+    "unscoreable",
+    "reason"
+  ],
+  "properties": {
+    "schema": {
+      "const": "publisher-reliability/report-v1"
+    },
+    "scorer": {
+      "const": "nist"
+    },
+    "as_of": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "status": {
+      "enum": [
+        "unmeasured",
+        "measured"
+      ]
+    },
+    "claim_scope": {
+      "const": {
+        "binary_forecast_scores_only": true,
+        "publisher_price_accuracy": false,
+        "price_eligible": false
+      }
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "sources",
+        "upstream",
+        "registration_basis"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+        },
+        "sources": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "upstream": {
+          "const": {
+            "commit": "07c3de97f9a012b3244496f43d8fd541b2f64a74",
+            "envelope_source": {
+              "commit": "b0efbd6fce3cdc5286372f8e0f11885580c4788b",
+              "git_blob": "25e3ce2531df916aee9c2bd4b2cb5cd084343931",
+              "path": "feeds/schema.json",
+              "repository": "https://github.com/policy-as-versioned-platform/platform",
+              "sha256": "7be8052a5c20df24eb39ce01b9b754b769a1425f2097d6b372389be002e72b59"
+            },
+            "git_blob": "9ba2d74a6e9c04ed59fa739549dc5e5dae555395",
+            "path": "twin/scoring.py",
+            "repository": "https://github.com/policy-as-versioned-flux/policy-as-versioned-flux",
+            "scope": "Unchanged binary scoring implementation; not a publisher-price reliability measure.",
+            "sha256": "c4c0912eb02b9b91dc1ebe9eaf12c5725ffea03458c2101baef75a989de0b123"
+          }
+        },
+        "registration_basis": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "inputs": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "targets",
+        "pairs"
+      ],
+      "properties": {
+        "schema": {
+          "const": "publisher-reliability/inputs-v1"
+        },
+        "targets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "publisher",
+              "name",
+              "tag",
+              "commit",
+              "path"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "publisher": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "tag": {
+                "type": "string",
+                "minLength": 1
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "commit": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              }
+            }
+          }
+        },
+        "pairs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "target",
+              "forecast",
+              "resolution"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "target": {
+                "type": "string",
+                "minLength": 1
+              },
+              "forecast": {
+                "type": "object",
+                "required": [
+                  "party",
+                  "tag",
+                  "commit",
+                  "path"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "party": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "tag": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "commit": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{40}$"
+                  },
+                  "path": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "resolution": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "party",
+                      "tag",
+                      "commit",
+                      "path"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "party": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "tag": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "commit": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{40}$"
+                      },
+                      "path": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "submitted",
+        "eligible",
+        "unscoreable"
+      ],
+      "properties": {
+        "submitted": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "eligible": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unscoreable": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "scores": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "target",
+          "probability",
+          "observed",
+          "brier",
+          "log_loss",
+          "forecast",
+          "resolution",
+          "question",
+          "registered_at",
+          "resolved_at",
+          "resolution_registered_at",
+          "resolution_source",
+          "target_reference"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "target": {
+            "type": "string",
+            "minLength": 1
+          },
+          "probability": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "exclusiveMaximum": 1
+          },
+          "observed": {
+            "type": "boolean"
+          },
+          "brier": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "log_loss": {
+            "type": "number",
+            "minimum": 0
+          },
+          "forecast": {
+            "type": "object",
+            "required": [
+              "party",
+              "tag",
+              "commit",
+              "path",
+              "git_blob"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "party": {
+                "type": "string",
+                "minLength": 1
+              },
+              "tag": {
+                "type": "string",
+                "minLength": 1
+              },
+              "commit": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "git_blob": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              }
+            }
+          },
+          "resolution": {
+            "type": "object",
+            "required": [
+              "party",
+              "tag",
+              "commit",
+              "path",
+              "git_blob"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "party": {
+                "type": "string",
+                "minLength": 1
+              },
+              "tag": {
+                "type": "string",
+                "minLength": 1
+              },
+              "commit": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "git_blob": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              }
+            }
+          },
+          "question": {
+            "type": "object",
+            "required": [
+              "id",
+              "proposition",
+              "resolution_window_opens_at"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "proposition": {
+                "type": "string",
+                "minLength": 1
+              },
+              "resolution_window_opens_at": {
+                "type": "string",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+              }
+            }
+          },
+          "registered_at": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+          },
+          "resolved_at": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+          },
+          "resolution_registered_at": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+          },
+          "resolution_source": {
+            "type": "string",
+            "pattern": "^https://[^ ]+$"
+          },
+          "target_reference": {
+            "type": "object",
+            "required": [
+              "publisher",
+              "name",
+              "tag",
+              "commit",
+              "path",
+              "git_blob"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "publisher": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "tag": {
+                "type": "string",
+                "minLength": 1
+              },
+              "commit": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "git_blob": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "losses": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lower_is_better",
+        "brier",
+        "log_loss"
+      ],
+      "properties": {
+        "lower_is_better": {
+          "const": true
+        },
+        "brier": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "log_loss": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "diagram": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bins",
+        "total"
+      ],
+      "properties": {
+        "bins": {
+          "type": "array",
+          "minItems": 10,
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "bin",
+              "range",
+              "count",
+              "mean_forecast",
+              "empirical_frequency"
+            ],
+            "properties": {
+              "bin": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9
+              },
+              "range": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "mean_forecast": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "empirical_frequency": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "count": {
+                      "const": 0
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "mean_forecast": {
+                      "type": "null"
+                    },
+                    "empirical_frequency": {
+                      "type": "null"
+                    }
+                  }
+                },
+                "else": {
+                  "properties": {
+                    "mean_forecast": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "empirical_frequency": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "unscoreable": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "reason"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "reason": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "unmeasured"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "counts": {
+            "properties": {
+              "eligible": {
+                "const": 0
+              }
+            }
+          },
+          "scores": {
+            "maxItems": 0
+          },
+          "losses": {
+            "const": {
+              "lower_is_better": true,
+              "brier": null,
+              "log_loss": null
+            }
+          },
+          "diagram": {
+            "properties": {
+              "total": {
+                "const": 0
+              },
+              "bins": {
+                "items": {
+                  "properties": {
+                    "count": {
+                      "const": 0
+                    },
+                    "mean_forecast": {
+                      "type": "null"
+                    },
+                    "empirical_frequency": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "counts": {
+            "properties": {
+              "eligible": {
+                "minimum": 1
+              }
+            }
+          },
+          "scores": {
+            "minItems": 1
+          },
+          "losses": {
+            "properties": {
+              "brier": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "log_loss": {
+                "type": "number",
+                "minimum": 0
+              }
+            }
+          },
+          "reason": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ]
+}

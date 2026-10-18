@@ -55,3 +55,12 @@ On the real `policy-as-versioned-nist` GitHub remote, releases are
 gitsign-signed (keyless → Rekor) — same convention as `driftwood`'s own
 source; verified out-of-band via `git verify-tag`/Rekor, not Flux's
 OpenPGP-only `spec.verify`.
+
+## Independent diagnostic report
+
+The existing publisher also carries the report-only first slice of ticket46 at
+[publisher-reliability](publisher-reliability/README.md). Its current genuine
+manifest is empty: the source report is explicitly unmeasured, with null losses
+and all reliability bins. Binary Brier/log-loss fixtures establish machinery, not
+publisher-price accuracy or a monetary effect. The report has a separate
+namespaced signed-release route; the controls catalogue and its tags are unchanged.

@@ -1,0 +1,17 @@
+{
+  "issuer": "https://token.actions.githubusercontent.com",
+  "publishers": {
+    "feeds": {
+      "identity": "https://github.com/policy-as-versioned-feeds/feeds/.github/workflows/cut-release.yml@refs/heads/main"
+    },
+    "ico": {
+      "identity": "https://github.com/policy-as-versioned-ico/ico/.github/workflows/cut-release.yml@refs/heads/main"
+    },
+    "insurer": {
+      "identity": "https://github.com/policy-as-versioned-insurer/insurer/.github/workflows/cut-release.yml@refs/heads/main"
+    },
+    "nist": {
+      "identity": "https://github.com/policy-as-versioned-nist/nist/.github/workflows/cut-release.yml@refs/heads/main"
+    }
+  }
+}

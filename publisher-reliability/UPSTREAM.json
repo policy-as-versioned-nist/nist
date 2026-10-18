@@ -1,0 +1,15 @@
+{
+  "commit": "07c3de97f9a012b3244496f43d8fd541b2f64a74",
+  "envelope_source": {
+    "commit": "b0efbd6fce3cdc5286372f8e0f11885580c4788b",
+    "git_blob": "25e3ce2531df916aee9c2bd4b2cb5cd084343931",
+    "path": "feeds/schema.json",
+    "repository": "https://github.com/policy-as-versioned-platform/platform",
+    "sha256": "7be8052a5c20df24eb39ce01b9b754b769a1425f2097d6b372389be002e72b59"
+  },
+  "git_blob": "9ba2d74a6e9c04ed59fa739549dc5e5dae555395",
+  "path": "twin/scoring.py",
+  "repository": "https://github.com/policy-as-versioned-flux/policy-as-versioned-flux",
+  "scope": "Unchanged binary scoring implementation; not a publisher-price reliability measure.",
+  "sha256": "c4c0912eb02b9b91dc1ebe9eaf12c5725ffea03458c2101baef75a989de0b123"
+}

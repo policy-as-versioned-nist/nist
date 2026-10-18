@@ -1,0 +1,3 @@
+# First namespaced report bootstrap1.0.0; no predecessor exists, so this is
+# a declared initial major, never a computed-major or price-quality claim.
+bump: major
