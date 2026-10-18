@@ -85,10 +85,21 @@ jobs:
 
       - name: validate the committed report without claiming a measured population
         if: env.PUBLICATION_KIND == 'report'
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
         run: |
           set -euo pipefail
           python3 -m pip install -r publisher-reliability/requirements.txt
-          bash scripts/verify-publisher-reliability.sh
+          case "$VERSION_INPUT" in
+            publisher-reliability/v1.*) bash scripts/verify-publisher-reliability.sh ;;
+            publisher-reliability/v2.*)
+              sources=$(mktemp -d)
+              python3 publisher-reliability/price_sources.py --root . \
+                --report publisher-reliability/v2/feed.json --destination "$sources"
+              bash scripts/verify-publisher-price-accuracy.sh --sources "$sources"
+              ;;
+            *) echo 'FAIL: unsupported report major'; exit 1 ;;
+          esac
 
       - name: reject a tag that already exists (no force-move, ever)
         env:

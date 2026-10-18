@@ -44,8 +44,18 @@ def compute(root, old, new, old_object):
     if (old['payload_schema'] != new['payload_schema'] or
             read(root, old['payload_schema'], old_object) != read(root, new['payload_schema'])):
         return 'major'
-    population = ('inputs', 'counts', 'scores', 'unscoreable')
-    if any(old['payload'][key] != new['payload'][key] for key in population):
+    if new['payload_schema'] == 'publisher-reliability/price-payload.schema.json':
+        def monetary_population(document):
+            payload = copy.deepcopy(document['payload'])
+            payload.pop('cutoff', None); payload.pop('tool', None)
+            for cohort in payload['reports']:
+                cohort.pop('cutoff', None); cohort.pop('tool', None)
+            return payload
+        changed = monetary_population(old) != monetary_population(new)
+    else:
+        population = ('inputs', 'counts', 'scores', 'unscoreable')
+        changed = any(old['payload'][key] != new['payload'][key] for key in population)
+    if changed:
         return 'minor'
     before, after = copy.deepcopy(old), copy.deepcopy(new)
     before.pop('version'); after.pop('version')
@@ -87,7 +97,8 @@ def check(root, tag):
         if git(root, 'rev-parse', 'refs/tags/' + name) != remote_objects[name]:
             raise Refused('local report tag object differs from origin: ' + name)
     current = report(root, wanted)
-    declared_version = json.loads((root / 'publisher-reliability/version.json').read_text())['version']
+    version_file = ('price-version.json' if current['payload_schema'] == 'publisher-reliability/price-payload.schema.json' else 'version.json')
+    declared_version = json.loads((root / 'publisher-reliability' / version_file).read_text())['version']
     if current['version'] != tag[len(PREFIX):] or declared_version != current['version']:
         raise Refused('tag, committed report and declared version do not agree')
     bump = declared(root)

@@ -1,6 +1,6 @@
 # A demonstration party, not affiliated with, endorsed by or speaking for any real authority it names.
 # The party artefact (ticket 04/21, ADR-0019). nist publishes controls and an
-# independent binary diagnostic report; it pins nothing -- inherits stays empty. roles omits
+# independent diagnostic reports; it pins nothing -- inherits stays empty. roles omits
 # adopter, so baseline is not required (ticket 04 Answer, party schema
 # roles: [publisher, risk-bearer, adopter, platform, insurer]).
 #
@@ -21,7 +21,7 @@ publishes:
   - kind: feed
     name: publisher-reliability
     path: publisher-reliability
-    payload_schema: publisher-reliability/payload.schema.json
+    payload_schema: publisher-reliability/price-payload.schema.json
     revoked: []
 # overlay is required by platform/party/schema.json for every party; a publisher that adopts nothing carries it empty.
 overlay:
