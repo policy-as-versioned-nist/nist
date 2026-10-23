@@ -1,9 +1,9 @@
 name: shadow recovery SDK source contracts
 on:
   pull_request:
-    paths: ['publisher-reliability/**', 'tests/test_recovery_price_adapter.py', '.github/workflows/shadow-recovery-sdk.yml']
+    paths: ['publisher-reliability/**', 'tests/test_recovery_price_adapter.py', 'tests/test_served_price_report_closure.py', '.github/workflows/shadow-recovery-sdk.yml']
   push:
-    paths: ['publisher-reliability/**', 'tests/test_recovery_price_adapter.py', '.github/workflows/shadow-recovery-sdk.yml']
+    paths: ['publisher-reliability/**', 'tests/test_recovery_price_adapter.py', 'tests/test_served_price_report_closure.py', '.github/workflows/shadow-recovery-sdk.yml']
 permissions:
   contents: read
 jobs:
@@ -20,3 +20,5 @@ jobs:
           .recovery-test-env/bin/python -m pip install -r publisher-reliability/requirements.txt
       - name: actual SDK preparation with explicit source-authentication fixtures
         run: .recovery-test-env/bin/python -B -m unittest discover -s tests -p test_recovery_price_adapter.py -v
+      - name: replay actual empty served report and reject changed closure
+        run: .recovery-test-env/bin/python -B -m unittest discover -s tests -p test_served_price_report_closure.py -v
