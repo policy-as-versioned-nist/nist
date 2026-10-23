@@ -1,3 +1,2 @@
-# Monetary empirical-CDF report family changes the payload schema from binary v1.
-# The independent catalogue family and historical binary artifact are preserved.
-bump: major
+# SDK capability and current empty-report tool closure only; no population/schema or price-quality change.
+bump: patch

@@ -34,6 +34,14 @@ class ReportRelease(unittest.TestCase):
         shutil.copytree(ROOT / 'publisher-reliability', self.upstream / 'publisher-reliability',
                         ignore=shutil.ignore_patterns('__pycache__'))
         shutil.copyfile(ROOT / 'party.yaml', self.upstream / 'party.yaml')
+        # This disposable source models an independent historical bootstrap.
+        # Its version/declaration tuple must not inherit the live release queue.
+        initial = self.upstream / 'publisher-reliability'
+        (initial / 'version.json').write_text(json.dumps({'version': '1.0.0', 'tool_version': '1.0.0'}))
+        binary = json.loads((initial / 'v1/feed.json').read_text())
+        binary['version'] = '1.0.0'
+        (initial / 'v1/feed.json').write_text(json.dumps(binary))
+        (initial / 'bump.yaml').write_text('bump: major\n')
         tools = self.upstream / '.github/scripts'
         tools.mkdir(parents=True)
         shutil.copyfile(GATE, tools / GATE.name)
@@ -79,6 +87,9 @@ class ReportRelease(unittest.TestCase):
     def test_monetary_schema_is_major_and_within_family_cutoff_is_patch(self):
         self.previous()
         monetary=json.loads((ROOT/'publisher-reliability/v2/feed.json').read_text())
+        monetary['version']='2.0.0'
+        self.change('publisher-reliability/price-version.json',{'version':'2.0.0','tool_version':'2.0.0'})
+        (self.repo/'publisher-reliability/bump.yaml').write_text('bump: major\n')
         self.change('publisher-reliability/v2/feed.json',monetary)
         call=self.invoke('publisher-reliability/v2.0.0')
         self.assertEqual(call.returncode,0,call.stdout+call.stderr)
