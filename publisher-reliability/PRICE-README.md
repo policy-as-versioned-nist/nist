@@ -114,3 +114,7 @@ Resolver construction and record checking both require the forecast's signed
 publisher to be its target publisher. They retain the same immutable served
 registration checks for forecast and independent outcome source that the full
 report already required; copied, rewritten, deleted or re-added records refuse.
+
+## Shadow recovery-expense family
+
+The closed supported target set also includes `feeds/recovery-expense`, served only by its same-tree `recovery-expense/to_fair_scenario.py`. This is a separate institution-year direct-expense pilot, not a relabelled threat or fine forecast. Its explicit signed context edge can coexist with existing monetary targets. The unchanged admission path still checks exact discovery/schema, publisher tree, context, cutoff history, fixed FAIR descriptor and actual converter reproduction. No arbitrary family or caller-provided scenario gains authority from this addition. Platform keeps this family out of ordinary institutional prices and financial dates. No actual model, registration, observation or score is provided by the SDK extension.
