@@ -216,6 +216,7 @@ class PriceReport(unittest.TestCase):
 
     def test_actual_cli_build_check_has_an_empty_versioned_envelope(self):
         cli = ROOT / 'publisher-reliability/price_report.py'
+        declared = json.loads((ROOT / 'publisher-reliability/price-version.json').read_text())
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / 'report.json'
             inputs=Path(temp)/'explicit-empty-fixture.json'
@@ -224,7 +225,7 @@ class PriceReport(unittest.TestCase):
                 '--as-of','2026-10-18T17:00:00Z','--output',str(path)],capture_output=True,text=True)
             self.assertEqual(built.returncode,0,built.stderr)
             envelope = json.loads(built.stdout)
-            self.assertEqual(envelope['version'],'2.0.0')
+            self.assertEqual(envelope['version'],declared['version'])
             self.assertEqual(envelope['payload']['reports'],[])
             checked = subprocess.run([sys.executable,str(cli),'check','--root',str(ROOT),
                 '--report',str(path)],capture_output=True,text=True)

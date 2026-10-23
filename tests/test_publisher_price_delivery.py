@@ -15,7 +15,8 @@ sys.path.insert(0,str(ROOT/'publisher-reliability'))
 
 
 def envelope(payload):
-    return {'kind':'feed','name':'publisher-reliability','version':'2.0.0',
+    declared = json.loads((ROOT/'publisher-reliability/price-version.json').read_text())
+    return {'kind':'feed','name':'publisher-reliability','version':declared['version'],
             'published_by':'nist','published_at':payload['cutoff'],
             'payload_schema':'publisher-reliability/price-payload.schema.json','payload':payload}
 
@@ -90,7 +91,8 @@ class PriceDelivery(unittest.TestCase):
                 fixture_git(release_root,'config',key,value)
             fixture_git(release_root,'add','.')
             fixture_git(release_root,'commit','-qm','unsigned synthetic source-release fixture')
-            tag='publisher-reliability/v2.0.0'
+            declared=json.loads((release_root/'publisher-reliability/price-version.json').read_text())
+            tag='publisher-reliability/v'+declared['version']
             fixture_git(release_root,'tag','-a',tag,'-m','unsigned synthetic outer verification fixture')
             binary=Path(temp)/'release-bin';binary.mkdir()
             python=binary/'python3'
