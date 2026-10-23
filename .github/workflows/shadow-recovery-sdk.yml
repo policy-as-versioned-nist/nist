@@ -1,0 +1,22 @@
+name: shadow recovery SDK source contracts
+on:
+  pull_request:
+    paths: ['publisher-reliability/**', 'tests/test_recovery_price_adapter.py', '.github/workflows/shadow-recovery-sdk.yml']
+  push:
+    paths: ['publisher-reliability/**', 'tests/test_recovery_price_adapter.py', '.github/workflows/shadow-recovery-sdk.yml']
+permissions:
+  contents: read
+jobs:
+  pure-admission-regressions:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      GIT_OPTIONAL_LOCKS: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - name: prepare isolated SDK dependencies
+        run: |
+          python3 -m venv .recovery-test-env
+          .recovery-test-env/bin/python -m pip install -r publisher-reliability/requirements.txt
+      - name: actual SDK preparation with explicit source-authentication fixtures
+        run: .recovery-test-env/bin/python -B -m unittest discover -s tests -p test_recovery_price_adapter.py -v

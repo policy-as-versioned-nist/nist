@@ -6,6 +6,14 @@ from fractions import Fraction
 import re
 
 
+# Closed named publisher contracts, not a caller-supplied converter registry.
+_SERVED_CONVERTERS = {
+    ('ico', 'penalty-schema'): 'schema/to_fair_scenario.py',
+    ('feeds', 'threat-register'): 'threat-register/to_fair_scenario.py',
+    ('feeds', 'recovery-expense'): 'recovery-expense/to_fair_scenario.py',
+}
+
+
 class PriceError(ValueError):
     """Named refusal; never converted into an unmeasured or favourable result."""
     def __init__(self, code, reason):
@@ -433,7 +441,7 @@ class _Session:
         if (envelope['published_by'] != target_ref['party'] or envelope['kind'] != 'feed' or
                 target_ref['tag'] not in ('v' + envelope['version'], envelope['name'] + '/v' + envelope['version'])):
             raise PriceError('source-binding', 'target feed envelope differs from exact tag/publisher')
-        if (target_ref['party'], envelope['name']) not in {('ico', 'penalty-schema'), ('feeds', 'threat-register')}:
+        if (target_ref['party'], envelope['name']) not in _SERVED_CONVERTERS:
             raise PriceError('unsupported-profile', 'target has no supported served annual-model converter')
         discovery = self.sources.read(self.sources.path_ref(target, 'party.yaml'))['document']
         publications = [p for p in discovery.get('publishes', [])
@@ -496,9 +504,7 @@ class _Session:
                 generator['context_ref'] != case['context_ref'] or
                 generator['invocation'] != ['forecast-base', 'payload.json', 'context.json']):
             raise PriceError('generator-mismatch', 'generator engine/context/normalized invocation differs')
-        served_path = {('ico', 'penalty-schema'): 'schema/to_fair_scenario.py',
-                       ('feeds', 'threat-register'): 'threat-register/to_fair_scenario.py'}.get(
-                           (target_ref['party'], target['document']['name']))
+        served_path = _SERVED_CONVERTERS.get((target_ref['party'], target['document']['name']))
         if served_path is None or generator['converter']['path'] != served_path:
             raise PriceError('unsupported-profile', 'forecast requires the actual supported served converter path')
         if any(generator['converter'][key] != target_ref[key] for key in ('party', 'tag', 'commit')):
